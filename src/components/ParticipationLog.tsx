@@ -101,7 +101,7 @@ export default function ParticipationLog() {
         setAttendance([]);
         setGuests([]);
       } else {
-        setAttendance(attendances || []);
+        setAttendance((attendances || []).filter(a => a.members?.name));
         setGuests(guestsData || []);
       }
 
