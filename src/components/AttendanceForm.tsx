@@ -156,9 +156,7 @@ export default function AttendanceForm() {
   };
 
   return (
-    <div className="max-w-[420px] mx-auto p-4 text-lg">
-      <h2 className="text-2xl font-bold text-center mb-6">참여 체크</h2>
-
+    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg">
       <input
         className="w-full p-3 border border-gray-300 rounded-xl mb-4 text-2xl"
         value={name}
@@ -214,6 +212,8 @@ export default function AttendanceForm() {
       </button>
 
       {result && <p className="text-green-600 text-center mt-4 font-semibold">{result}</p>}
+
+      <hr className="mt-8 border-t" />
     </div>
   );
 }

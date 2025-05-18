@@ -51,8 +51,7 @@ export default function MemberAdmin() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">회원관리</h2>
+    <div className="max-w-screen-sm w-full mx-auto px-4 py-6">
 
       <div className="space-y-2 mb-10">
         <input
@@ -117,6 +116,7 @@ export default function MemberAdmin() {
           ))}
         </tbody>
       </table>
+      <hr className="mt-8 border-t" />
     </div>
   );
 }
