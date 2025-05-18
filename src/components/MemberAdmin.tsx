@@ -15,12 +15,16 @@ export default function MemberAdmin() {
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newStatus, setNewStatus] = useState('정회원');
+  // 관리자 로그인 상태 확인
+  const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
   const statusOptions = ['정회원', '준회원', '게스트', '정지', '탈퇴'];
 
   useEffect(() => {
-    fetchMembers();
-  }, []);
+    if (isAdmin) {
+      fetchMembers();
+    }
+  }, [isAdmin]);
 
   const fetchMembers = async () => {
     const { data, error } = await supabase.from('members').select();
@@ -41,7 +45,9 @@ export default function MemberAdmin() {
       setNewName('');
       setNewPhone('');
       setNewStatus('정회원');
-      fetchMembers();
+      if (isAdmin) {
+        fetchMembers();
+      }
     }
   };
 
@@ -88,37 +94,43 @@ export default function MemberAdmin() {
         </button>
       </div>
 
-      <table className="w-full text-left border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2">이름</th>
-            <th className="p-2">휴대폰번호</th>
-            <th className="p-2">상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {members.map(member => (
-            <tr key={member.id} className="border-t">
-              <td className="p-2">{member.name}</td>
-              <td className="p-2">
-                {member.phone && /^\d{8}$/.test(member.phone)
-                  ? `010-${member.phone.slice(0, 4)}-${member.phone.slice(4)}`
-                  : member.phone}
-              </td>
-              <td className="p-2">
-                <select
-                  value={member.status}
-                  onChange={e => handleStatusChange(member.id, e.target.value)}
-                >
-                  {statusOptions.map(status => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
-              </td>
+      {isAdmin ? (
+        <table className="w-full text-left border">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="p-2">이름</th>
+              <th className="p-2">휴대폰번호</th>
+              <th className="p-2">상태</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {members.map(member => (
+              <tr key={member.id} className="border-t">
+                <td className="p-2">{member.name}</td>
+                <td className="p-2">
+                  {member.phone && /^\d{8}$/.test(member.phone)
+                    ? `010-${member.phone.slice(0, 4)}-${member.phone.slice(4)}`
+                    : member.phone}
+                </td>
+                <td className="p-2">
+                  <select
+                    value={member.status}
+                    onChange={e => handleStatusChange(member.id, e.target.value)}
+                  >
+                    {statusOptions.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div className="py-4 text-center text-gray-500 border rounded">
+          회원 목록을 보려면 관리자 로그인이 필요합니다.
+        </div>
+      )}
     </div>
   );
 }
