@@ -22,3 +22,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# test coverage
+coverage
+
+# vercel CLI
+.vercel

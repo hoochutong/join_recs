@@ -69,8 +69,8 @@ export default function ParticipationLog() {
     const fetchRecords = async () => {
       setLoading(true);
       setError('');
-      const start = dayjs(selectedDate).tz('Asia/Seoul').startOf('day').utc().format();
-      const end = dayjs(selectedDate).tz('Asia/Seoul').endOf('day').utc().format();
+      const start = dayjs(selectedDate).tz('Asia/Seoul').startOf('day').format();
+      const end = dayjs(selectedDate).tz('Asia/Seoul').endOf('day').format();
 
       const { data: attendances, error: err1 } = await supabase
         .from('attendances')
@@ -101,7 +101,9 @@ export default function ParticipationLog() {
         setAttendance([]);
         setGuests([]);
       } else {
-        setAttendance((attendances || []).filter(a => a.members?.name));
+        console.log('✅ attendances:', attendances);
+        console.log('✅ guests:', guestsData);
+        setAttendance(attendances || []);
         setGuests(guestsData || []);
       }
 
@@ -177,6 +179,8 @@ export default function ParticipationLog() {
 
   return (
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6 print:p-0 print:bg-white">
+      <h2 className="text-left text-xl font-semibold mb-2 text-gray-800">참여 기록</h2>
+      <hr className="mb-4 border-t" />
       <div className="mb-4 flex items-center space-x-2">
         <div className="relative">
           <input
@@ -211,37 +215,38 @@ export default function ParticipationLog() {
       ) : (
         <>
           <div ref={pdfRef} className={exporting ? '' : 'hidden'}>
-            <h2 className="text-xl font-semibold mb-4 text-center text-gray-800">
-              피클볼클럽&nbsp;&nbsp;[{dayjs(selectedDate).format('YYYY년 M월 D일')}] 참여기록
-            </h2>
+            <h1 className="text-center text-[1.5em] font-bold mb-4">
+              피클볼클럽 [{dayjs(selectedDate).tz('Asia/Seoul').format('YYYY년 M월 D일(dddd)')}] 참여기록
+            </h1>
+            <hr className="mb-6 border-t" />
             <div className="overflow-x-auto">
-              <table className="min-w-full border border-gray-300 text-sm">
+              <table className="min-w-full border border-gray-300 text-sm bg-white">
                 <thead>
                   <tr>
-                    <th className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">이름</th>
-                    <th className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">휴대폰 번호</th>
-                    <th className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">상태</th>
-                    <th className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">기록 시각</th>
+                    <th className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-gray-200 text-center leading-[1.4em]">이름</th>
+                    <th className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-gray-200 text-center leading-[1.4em]">휴대폰 번호</th>
+                    <th className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-gray-200 text-center leading-[1.4em]">상태</th>
+                    <th className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-gray-200 text-center leading-[1.4em]">기록 시각</th>
                   </tr>
                 </thead>
                 <tbody>
                   {displayData.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-4">
+                      <td colSpan={4} className="text-center py-4 bg-white text-[1.3em] border-t border-b border-gray-300 leading-[1.4em]">
                         참여 기록이 없습니다.
                       </td>
                     </tr>
                   ) : (
                     displayData.map((rec) => (
                       <tr key={rec.id}>
-                        <td className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">{rec.name}</td>
-                        <td className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">
+                        <td className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-white text-center leading-[1.4em]">{rec.name}</td>
+                        <td className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-white text-center leading-[1.4em]">
                           {rec.phone && rec.phone.length === 8
                             ? `010-${rec.phone.slice(0, 4)}-${rec.phone.slice(4)}`
                             : rec.phone || ''}
                         </td>
-                        <td className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">{rec.status}</td>
-                        <td className="border border-gray-300 px-3 py-2 text-gray-700 text-sm">
+                        <td className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-white text-center leading-[1.4em]">{rec.status}</td>
+                        <td className="border-t border-b border-gray-300 px-3 py-2 text-gray-700 text-[1.3em] bg-white text-center leading-[1.4em]">
                           {dayjs(rec.record_time).tz('Asia/Seoul').format('HH시 mm분')}
                         </td>
                       </tr>
@@ -251,6 +256,7 @@ export default function ParticipationLog() {
               </table>
             </div>
           </div>
+          
           <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-300 text-sm">
               <thead>
@@ -295,7 +301,6 @@ export default function ParticipationLog() {
           </div>
         </>
       )}
-      <hr className="mt-8 border-t" />
     </div>
   );
 }

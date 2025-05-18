@@ -53,6 +53,9 @@ export default function MemberAdmin() {
   return (
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6">
 
+      <h2 className="text-lg font-bold text-left">회원관리</h2>
+      <hr className="mt-1 mb-4 border-t" />
+
       <div className="space-y-2 mb-10">
         <input
           className="w-full p-2 border rounded"
@@ -116,7 +119,6 @@ export default function MemberAdmin() {
           ))}
         </tbody>
       </table>
-      <hr className="mt-8 border-t" />
     </div>
   );
 }
