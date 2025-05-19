@@ -90,21 +90,57 @@ export default function ParticipationLog() {
         `);
 
       const guestsData = (guestsDataRaw || []).filter(g => {
-        const rt = g.attendances?.record_time;
+        let rt: string | undefined = undefined;
+        if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0].record_time) {
+          rt = g.attendances[0].record_time;
+        } else if (g.attendances && g.attendances.record_time) {
+          rt = g.attendances.record_time;
+        }
         return rt && dayjs(rt).isBetween(start, end, null, '[]');
-      }).sort((a, b) =>
-        dayjs(a.attendances?.record_time).diff(dayjs(b.attendances?.record_time))
-      );
+      }).sort((a, b) => {
+        let aTime: string | undefined = undefined;
+        let bTime: string | undefined = undefined;
+        if (Array.isArray(a.attendances) && a.attendances.length > 0 && a.attendances[0].record_time) {
+          aTime = a.attendances[0].record_time;
+        } else if (a.attendances && a.attendances.record_time) {
+          aTime = a.attendances.record_time;
+        }
+        if (Array.isArray(b.attendances) && b.attendances.length > 0 && b.attendances[0].record_time) {
+          bTime = b.attendances[0].record_time;
+        } else if (b.attendances && b.attendances.record_time) {
+          bTime = b.attendances.record_time;
+        }
+        return dayjs(aTime).diff(dayjs(bTime));
+      });
 
       if (err1 || err2) {
         setError('참여 기록을 불러오지 못했습니다.');
         setAttendance([]);
         setGuests([]);
       } else {
-        console.log('✅ attendances:', attendances);
-        console.log('✅ guests:', guestsData);
-        setAttendance(attendances || []);
-        setGuests(guestsData || []);
+        setAttendance((attendances || []).map((a: any) => ({
+          id: a.id,
+          record_time: a.record_time,
+          members: a.members ? {
+            name: a.members.name,
+            phone: a.members.phone,
+            status: a.members.status
+          } : undefined
+        })));
+        setGuests((guestsData || []).map((g: any) => {
+          let recordTime: string | undefined = undefined;
+          if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0].record_time) {
+            recordTime = g.attendances[0].record_time;
+          } else if (g.attendances && g.attendances.record_time) {
+            recordTime = g.attendances.record_time;
+          }
+          return {
+            id: g.id,
+            guest_name: g.guest_name,
+            guest_phone: g.guest_phone,
+            attendances: recordTime ? { record_time: recordTime } : undefined
+          };
+        }));
       }
 
       setLoading(false);

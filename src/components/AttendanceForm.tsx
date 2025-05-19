@@ -28,33 +28,42 @@ export default function AttendanceForm() {
       .select('id, status')
       .eq('name', name.trim())
       .single();
+    console.log('memberRes:', memberRes);
+    console.log('memberRes.data.id:', memberRes.data?.id);
 
-    const todayStart = dayjs().tz('Asia/Seoul').startOf('day').toISOString();
-    const todayEnd = dayjs().tz('Asia/Seoul').endOf('day').toISOString();
+    const nowKST = dayjs().tz('Asia/Seoul');
+    const todayStart = nowKST.startOf('day').utc().format();
+    const todayEnd = nowKST.endOf('day').utc().format();
 
-    // Check for duplicate member attendance
     const existingMember = await supabase
       .from('attendances')
-      .select('id')
+      .select('id, record_time')
       .gte('record_time', todayStart)
       .lte('record_time', todayEnd)
       .eq('member_id', memberRes?.data?.id || 0)
-      .maybeSingle();
+      .order('record_time', { ascending: false })
+      .limit(1)
+      .single();
 
-    if (existingMember.data) {
-      alert('오늘은 이미 참여를 완료하셨습니다.');
-      return;
+    if (existingMember.data?.record_time) {
+      const recordTime = dayjs(existingMember.data.record_time);
+      if (recordTime.isBetween(dayjs(todayStart), dayjs(todayEnd), null, '[]')) {
+        alert('오늘은 이미 참여를 완료하셨습니다.');
+        return;
+      }
     }
 
-    // Check for duplicate guest attendance (name match)
     const existingGuest = await supabase
       .from('attendance_guests')
       .select('id,attendances!inner(record_time)')
       .eq('guest_name', name.trim());
+    console.log('existingGuest:', existingGuest);
 
-    const alreadyAttended = (existingGuest.data || []).some(g =>
-      dayjs(g.attendances?.record_time).isBetween(todayStart, todayEnd, null, '[]')
+    const alreadyAttended = (existingGuest.data || []).some((g: any) =>
+      g.attendances && g.attendances.record_time &&
+      dayjs(g.attendances.record_time).isBetween(dayjs(todayStart), dayjs(todayEnd), null, '[]')
     );
+    console.log('alreadyAttended:', alreadyAttended);
 
     if (alreadyAttended) {
       alert('오늘은 이미 참여를 완료하셨습니다.');
@@ -62,7 +71,6 @@ export default function AttendanceForm() {
     }
 
     if (memberRes.error || !memberRes.data) {
-      // 🔍 check if this guest participated before
       const guestExists = await supabase
         .from('attendance_guests')
         .select('id')
@@ -85,7 +93,7 @@ export default function AttendanceForm() {
         return;
       }
 
-      const guestData = [];
+      const guestData: { guest_name: string; guest_phone: string; attendance_id: string }[] = [];
       guestData.push({
         guest_name: name.trim(),
         guest_phone: '',
@@ -135,7 +143,7 @@ export default function AttendanceForm() {
       return;
     }
 
-    const guestData = [];
+    const guestData: { guest_name: string; guest_phone: string; attendance_id: string }[] = [];
     if (guest1Name) guestData.push({ guest_name: guest1Name, guest_phone: guest1Phone, attendance_id: attendance.id });
     if (guest2Name) guestData.push({ guest_name: guest2Name, guest_phone: guest2Phone, attendance_id: attendance.id });
 
@@ -157,8 +165,7 @@ export default function AttendanceForm() {
 
   return (
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg">
-      <h2 className="text-left font-bold text-xl">참여 체크</h2>
-      <hr className="mt-2 mb-6 border-t" />
+      
       <input
         className="w-full p-3 border border-gray-300 rounded-xl mb-4 text-2xl"
         value={name}

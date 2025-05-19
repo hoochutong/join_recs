@@ -1,6 +1,5 @@
-
-
 // src/pages/AdminPage.tsx
+import React from 'react';
 import MemberAdmin from '../components/MemberAdmin';
 import ParticipationLog from '../components/ParticipationLog';
 
