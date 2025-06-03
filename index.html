@@ -1,11 +1,36 @@
 <!-- /index.html -->
+<!-- 피클볼 참여기록 웹앱의 HTML 메인 파일입니다 -->
 <!DOCTYPE html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- 파비콘 설정: 브라우저 탭에 표시되는 아이콘들 -->
     <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    
+    <!-- iOS 홈화면 아이콘: iPhone, iPad에서 "홈 화면에 추가" 시 사용 -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    
+    <!-- Android 홈화면 아이콘: Android에서 "홈 화면에 추가" 시 사용 -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+    
+    <!-- PWA 매니페스트: 홈화면 추가 시 앱처럼 동작하도록 설정 -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- 모바일 웹앱 메타데이터: 홈화면에 추가 시 앱처럼 동작하도록 설정 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="피클볼 참여기록" />
+    
+    <!-- 웹앱 제목과 설명 -->
     <title>피클볼 참여기록</title>
+    <meta name="description" content="피클볼클럽 참여 체크 및 기록 관리 시스템" />
   </head>
   <body>
     <div id="root"></div>
