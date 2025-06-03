@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ChevronLeftIcon, ChevronRightIcon, PencilSquareIcon } from '@heroicons/react/24/solid';
+import { PencilSquareIcon, UsersIcon } from '@heroicons/react/24/solid';
 
 // Member 타입: 회원 정보를 나타냅니다.
 interface Member {
@@ -109,11 +109,14 @@ export default function MemberAdmin() {
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6">
       {/* 타이틀과 참여기록 링크 */}
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-2xl font-bold text-left">회원관리</h2>
+        <div className="flex items-center space-x-2">
+          <UsersIcon className="h-7 w-7 text-gray-800" />
+          <h2 className="text-2xl font-bold text-left">회원관리</h2>
+        </div>
         <button
            onClick={() => navigate('/')}
            title="체크인하기" 
-           className="text-gray-400 hover:text-gray-600">
+           className="text-gray-300 hover:text-gray-500">
           <PencilSquareIcon className="h-7 w-7" />
         </button>
       </div>
@@ -193,13 +196,17 @@ export default function MemberAdmin() {
               <button
                 onClick={() => fetchMembers(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`p-2 rounded-full ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center ${
                   currentPage === 1 
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
                   : 'bg-blue-500 text-white hover:bg-blue-600'
                 }`}
               >
-                <ChevronLeftIcon className="h-4 w-4" />
+                <div className={`w-0 h-0 border-t-[5px] border-b-[5px] border-r-[6px] ${
+                  currentPage === 1 
+                  ? 'border-t-transparent border-b-transparent border-r-gray-300' 
+                  : 'border-t-transparent border-b-transparent border-r-white'
+                }`}></div>
               </button>
               
               <span className="px-3 py-1 text-sm">
@@ -210,20 +217,24 @@ export default function MemberAdmin() {
               <button
                 onClick={() => fetchMembers(currentPage + 1)}
                 disabled={currentPage >= Math.ceil(totalMembers / membersPerPage)}
-                className={`p-2 rounded-full ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center ${
                   currentPage >= Math.ceil(totalMembers / membersPerPage)
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                   : 'bg-blue-500 text-white hover:bg-blue-600'
                 }`}
               >
-                <ChevronRightIcon className="h-4 w-4" />
+                <div className={`w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] ${
+                  currentPage >= Math.ceil(totalMembers / membersPerPage)
+                  ? 'border-t-transparent border-b-transparent border-l-gray-300'
+                  : 'border-t-transparent border-b-transparent border-l-white'
+                }`}></div>
               </button>
             </div>
           )}
         </>
       ) : (
         <div className="py-4 text-center border rounded">
-          <div className="text-gray-500 mb-4">
+          <div className="text-gray-400 mb-4">
             회원 목록을 보려면 관리자 로그인이 필요합니다.
           </div>
           <button
