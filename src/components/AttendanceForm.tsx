@@ -27,12 +27,20 @@ export default function AttendanceForm() {
   const [guestPhone, setGuestPhone] = useState(''); // 전화번호 필수 입력
 
   useEffect(() => {
-    // 정회원, 준회원만 가져옴 (개인정보 보호를 위해 휴대폰번호 마지막 4자리만)
+    // 정회원, 준회원만 가져옴 (임시로 기존 방식 사용)
     supabase
-      .from('members_safe')
-      .select('id, name, phone_last4, status')
+      .from('members')
+      .select('id, name, phone, status')
+      .in('status', ['정회원', '준회원'])
       .order('name', { ascending: true })
-      .then(({ data }) => setMembers(data || []));
+      .then(({ data }) => {
+        // 개인정보 보호를 위해 클라이언트에서 휴대폰번호 마지막 4자리만 표시
+        const safeData = (data || []).map(member => ({
+          ...member,
+          phone_last4: member.phone && member.phone.length >= 4 ? member.phone.slice(-4) : ''
+        }));
+        setMembers(safeData);
+      });
   }, []);
 
   const handleSubmit = async () => {
@@ -187,7 +195,7 @@ export default function AttendanceForm() {
   };
 
   return (
-    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg">
+    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg attendance-form-section">
       {/* 게스트 체크박스 */}
       <div className="flex justify-end mb-4">
         <label

@@ -204,8 +204,8 @@ export default function ParticipationLog() {
   ].sort((a, b) => dayjs(a.record_time).diff(dayjs(b.record_time)));
 
   return (
-    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 print:p-0 print:bg-white">
-      <h2 className="text-left text-xl font-semibold mb-2 text-gray-800">참여 기록</h2>
+    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 print:p-0 print:bg-white participation-log-section">
+      <h2 className="text-left text-2xl font-semibold mb-2 text-gray-800">참여 기록</h2>
       <hr className="mb-4 border-t" />
       <div className="mb-4 flex items-center space-x-2">
         <div className="relative">

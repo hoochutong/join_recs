@@ -2,7 +2,9 @@
 // /src/components/MemberAdmin.tsx
 // 회원 관리(추가, 상태 변경, 목록 조회) 기능을 제공하는 컴포넌트입니다.
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { ChevronLeftIcon, ChevronRightIcon, PencilSquareIcon } from '@heroicons/react/24/solid';
 
 // Member 타입: 회원 정보를 나타냅니다.
 interface Member {
@@ -14,10 +16,16 @@ interface Member {
 
 // MemberAdmin 컴포넌트: 회원 추가, 상태 변경, 목록 조회 UI를 제공합니다.
 export default function MemberAdmin() {
+  const navigate = useNavigate(); // 페이지 이동을 위한 navigate 함수
   const [members, setMembers] = useState<Member[]>([]);
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newStatus, setNewStatus] = useState('정회원');
+  // 페이지네이션 상태 추가
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalMembers, setTotalMembers] = useState(0);
+  const membersPerPage = 5; // 5명씩 표시
+  
   // 관리자 로그인 상태 확인 및 비밀번호 저장
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
@@ -32,12 +40,30 @@ export default function MemberAdmin() {
   }, [isAdmin]);
 
   // 회원 목록을 Supabase에서 조회하는 함수 (관리자용 - 전체 정보 포함)
-  const fetchMembers = async () => {
-    const adminPassword = localStorage.getItem('adminPassword') || 'pikachu1029';
-    const { data, error } = await supabase.rpc('get_members_admin_simple', {
-      admin_pass: adminPassword
-    });
-    if (!error && data) setMembers(data);
+  const fetchMembers = async (page = 1) => {
+    // 전체 회원 수 조회
+    const { count } = await supabase
+      .from('members')
+      .select('*', { count: 'exact', head: true });
+    
+    if (count) setTotalMembers(count);
+    
+    // 페이지네이션 적용하여 조회 (최신순 정렬)
+    const from = (page - 1) * membersPerPage;
+    const to = from + membersPerPage - 1;
+    
+    const { data, error } = await supabase
+      .from('members')
+      .select('id, name, phone, status, created_at')
+      .order('created_at', { ascending: false }) // 최신순 정렬
+      .range(from, to);
+    
+    if (!error && data) {
+      setMembers(data);
+      setCurrentPage(page);
+    } else {
+      console.error('회원 목록 조회 오류:', error);
+    }
   };
 
   // 관리자 로그인 함수
@@ -68,7 +94,7 @@ export default function MemberAdmin() {
       setNewPhone('');
       setNewStatus('정회원');
       if (isAdmin) {
-        fetchMembers();
+        fetchMembers(1); // 첫 번째 페이지로 이동
       }
     }
   };
@@ -76,13 +102,21 @@ export default function MemberAdmin() {
   // 회원 상태 변경 함수
   const handleStatusChange = async (id: string, newStatus: string) => {
     await supabase.from('members').update({ status: newStatus }).eq('id', id);
-    fetchMembers();
+    fetchMembers(currentPage); // 현재 페이지 새로고침
   };
 
   return (
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6">
-
-      <h2 className="text-xl font-bold text-left">회원관리</h2>
+      {/* 타이틀과 참여기록 링크 */}
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-2xl font-bold text-left">회원관리</h2>
+        <button
+           onClick={() => navigate('/')}
+           title="체크인하기" 
+           className="text-gray-400 hover:text-gray-600">
+          <PencilSquareIcon className="h-7 w-7" />
+        </button>
+      </div>
       <hr className="mt-1 mb-4 border-t" />
 
       {/* 회원 추가 입력 폼 */}
@@ -120,37 +154,73 @@ export default function MemberAdmin() {
 
       {/* 회원 목록 테이블 (관리자만 볼 수 있음) */}
       {isAdmin ? (
-        <table className="w-full text-left border">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-2">이름</th>
-              <th className="p-2">휴대폰번호</th>
-              <th className="p-2">상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map(member => (
-              <tr key={member.id} className="border-t">
-                <td className="p-2">{member.name}</td>
-                <td className="p-2">
-                  {member.phone && /^\d{8}$/.test(member.phone)
-                    ? `010-${member.phone.slice(0, 4)}-${member.phone.slice(4)}`
-                    : member.phone}
-                </td>
-                <td className="p-2">
-                  <select
-                    value={member.status}
-                    onChange={e => handleStatusChange(member.id, e.target.value)}
-                  >
-                    {statusOptions.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                </td>
+        <>
+          <table className="w-full text-left border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2">이름</th>
+                <th className="p-2">휴대폰번호</th>
+                <th className="p-2">상태</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {members.map(member => (
+                <tr key={member.id} className="border-t">
+                  <td className="p-2">{member.name}</td>
+                  <td className="p-2">
+                    {member.phone && /^\d{8}$/.test(member.phone)
+                      ? `010-${member.phone.slice(0, 4)}-${member.phone.slice(4)}`
+                      : member.phone}
+                  </td>
+                  <td className="p-2">
+                    <select
+                      value={member.status}
+                      onChange={e => handleStatusChange(member.id, e.target.value)}
+                    >
+                      {statusOptions.map(status => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {/* 페이지네이션 UI */}
+          {totalMembers > membersPerPage && (
+            <div className="flex justify-center items-center mt-4 space-x-2">
+              <button
+                onClick={() => fetchMembers(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`p-2 rounded-full ${
+                  currentPage === 1 
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+              </button>
+              
+              <span className="px-3 py-1 text-sm">
+                {currentPage} / {Math.ceil(totalMembers / membersPerPage)} 
+                (총 {totalMembers}명)
+              </span>
+              
+              <button
+                onClick={() => fetchMembers(currentPage + 1)}
+                disabled={currentPage >= Math.ceil(totalMembers / membersPerPage)}
+                className={`p-2 rounded-full ${
+                  currentPage >= Math.ceil(totalMembers / membersPerPage)
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="py-4 text-center border rounded">
           <div className="text-gray-500 mb-4">
