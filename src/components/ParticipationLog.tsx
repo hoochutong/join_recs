@@ -27,6 +27,7 @@ type GuestRecord = {
   attendances?: {
     record_time: string;
   };
+  record_time?: string;
 };
 
 export default function ParticipationLog() {
@@ -85,31 +86,24 @@ export default function ParticipationLog() {
           id,
           guest_name,
           guest_phone,
+          record_time,
           attendance_id,
           attendances!attendance_guests_attendance_id_fkey(record_time)
         `);
 
       const guestsData = (guestsDataRaw || []).filter(g => {
         let rt: string | undefined = undefined;
-        if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0].record_time) {
+        if (g.record_time) {
+          rt = g.record_time;
+        } else if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0].record_time) {
           rt = g.attendances[0].record_time;
         } else if (g.attendances && g.attendances.record_time) {
           rt = g.attendances.record_time;
         }
         return rt && dayjs(rt).isBetween(start, end, null, '[]');
       }).sort((a, b) => {
-        let aTime: string | undefined = undefined;
-        let bTime: string | undefined = undefined;
-        if (Array.isArray(a.attendances) && a.attendances.length > 0 && a.attendances[0].record_time) {
-          aTime = a.attendances[0].record_time;
-        } else if (a.attendances && a.attendances.record_time) {
-          aTime = a.attendances.record_time;
-        }
-        if (Array.isArray(b.attendances) && b.attendances.length > 0 && b.attendances[0].record_time) {
-          bTime = b.attendances[0].record_time;
-        } else if (b.attendances && b.attendances.record_time) {
-          bTime = b.attendances.record_time;
-        }
+        let aTime: string | undefined = a.record_time || (Array.isArray(a.attendances) ? a.attendances[0]?.record_time : a.attendances?.record_time);
+        let bTime: string | undefined = b.record_time || (Array.isArray(b.attendances) ? b.attendances[0]?.record_time : b.attendances?.record_time);
         return dayjs(aTime).diff(dayjs(bTime));
       });
 
@@ -128,17 +122,13 @@ export default function ParticipationLog() {
           } : undefined
         })));
         setGuests((guestsData || []).map((g: any) => {
-          let recordTime: string | undefined = undefined;
-          if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0].record_time) {
-            recordTime = g.attendances[0].record_time;
-          } else if (g.attendances && g.attendances.record_time) {
-            recordTime = g.attendances.record_time;
-          }
+          let recordTime: string | undefined = g.attendances?.record_time || g.record_time;
           return {
             id: g.id,
             guest_name: g.guest_name,
             guest_phone: g.guest_phone,
-            attendances: recordTime ? { record_time: recordTime } : undefined
+            attendances: recordTime ? { record_time: recordTime } : undefined,
+            record_time: g.record_time,
           };
         }));
       }
@@ -209,7 +199,7 @@ export default function ParticipationLog() {
       name: g.guest_name,
       phone: g.guest_phone,
       status: '게스트',
-      record_time: g.attendances?.record_time || '',
+      record_time: g.attendances?.record_time || g.record_time || '',
     })),
   ].sort((a, b) => dayjs(a.record_time).diff(dayjs(b.record_time)));
 
