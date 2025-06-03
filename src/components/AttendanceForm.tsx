@@ -15,6 +15,12 @@ dayjs.extend(isBetween);
 export default function AttendanceForm() {
   const [members, setMembers] = useState<any[]>([]);
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
+  // 자동완성 기능을 위한 새로운 상태들
+  const [memberInput, setMemberInput] = useState(''); // 회원 이름 입력 필드값
+  const [filteredMembers, setFilteredMembers] = useState<any[]>([]); // 필터링된 회원 목록
+  const [showMemberList, setShowMemberList] = useState(false); // 회원 목록 표시 여부
+  const [selectedIndex, setSelectedIndex] = useState(-1); // 키보드 네비게이션용 인덱스
+  
   const [hasGuest, setHasGuest] = useState(false);
   const [guest1Name, setGuest1Name] = useState('');
   const [guest1Phone, setGuest1Phone] = useState('');
@@ -42,6 +48,74 @@ export default function AttendanceForm() {
         setMembers(safeData);
       });
   }, []);
+
+  // 회원 이름 입력값이 변경될 때 필터링 수행
+  const handleMemberInputChange = (value: string) => {
+    setMemberInput(value);
+    setSelectedIndex(-1);
+    
+    if (value.trim() === '') {
+      setFilteredMembers([]);
+      setShowMemberList(false);
+      setSelectedMember(null);
+      return;
+    }
+
+    // 입력값으로 회원 이름 필터링 (한글 자모음 부분 매칭도 고려)
+    const filtered = members.filter(member => 
+      member.name.toLowerCase().includes(value.toLowerCase()) ||
+      member.name.includes(value)
+    );
+    
+    setFilteredMembers(filtered);
+    setShowMemberList(filtered.length > 0);
+    
+    // 정확히 일치하는 회원이 있으면 자동 선택
+    const exactMatch = filtered.find(member => member.name === value);
+    if (exactMatch) {
+      setSelectedMember(exactMatch);
+    } else {
+      setSelectedMember(null);
+    }
+  };
+
+  // 회원 선택 처리
+  const handleMemberSelect = (member: any) => {
+    setSelectedMember(member);
+    setMemberInput(member.name);
+    setShowMemberList(false);
+    setSelectedIndex(-1);
+  };
+
+  // 키보드 네비게이션 처리
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showMemberList || filteredMembers.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < filteredMembers.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev > 0 ? prev - 1 : filteredMembers.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < filteredMembers.length) {
+          handleMemberSelect(filteredMembers[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowMemberList(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
 
   const handleSubmit = async () => {
     const nowKST = dayjs().tz('Asia/Seoul');
@@ -182,6 +256,10 @@ export default function AttendanceForm() {
     setTimeout(() => {
       console.log('폼 초기화 실행');
       setSelectedMember(null);
+      setMemberInput(''); // 회원 입력 필드도 초기화
+      setFilteredMembers([]); // 필터링된 목록도 초기화
+      setShowMemberList(false); // 회원 목록 숨김
+      setSelectedIndex(-1); // 선택 인덱스 초기화
       setHasGuest(false);
       setGuest1Name('');
       setGuest1Phone('');
@@ -202,10 +280,14 @@ export default function AttendanceForm() {
           onClick={() => {
             setIsGuestMode(!isGuestMode);
             setSelectedMember(null);
+            setMemberInput(''); // 회원 입력 필드 초기화
+            setFilteredMembers([]); // 필터링된 목록 초기화
+            setShowMemberList(false); // 회원 목록 숨김
+            setSelectedIndex(-1); // 선택 인덱스 초기화
             setGuestName('');
             setGuestPhone('');
           }}
-          className={`px-4 py-2 rounded-full flex items-center space-x-2 cursor-pointer font-bold text-white ${
+          className={`px-3 py-1.5 rounded-full flex items-center space-x-2 cursor-pointer font-bold text-white ${
             isGuestMode ? 'bg-black' : 'bg-[#9a9a9a]'
           }`}
         >
@@ -213,13 +295,13 @@ export default function AttendanceForm() {
         </label>
       </div>
 
-      {/* 회원 선택 드롭다운 또는 이름 입력 필드 */}
-      <div className="mb-4 flex items-center space-x-2">
+      {/* 회원 자동완성 입력 필드 또는 게스트 이름 입력 필드 */}
+      <div className="mb-4 flex items-center space-x-2 relative">
         {isGuestMode ? (
           <>
             <input
               className="w-full p-3 h-[56px] border border-gray-300 rounded-xl text-xl"
-              placeholder="이름을 입력하세요"
+              placeholder="이름을 정확히 입력하세요"
               value={guestName}
               onChange={e => setGuestName(e.target.value)}
               required
@@ -230,7 +312,7 @@ export default function AttendanceForm() {
               pattern="[0-9]{8}"
               maxLength={8}
               title="010을 제외한 숫자 8자리를 입력해주세요."
-              className="w-full p-3 border border-gray-300 rounded-xl text-ml"
+              className="w-full p-3 border border-gray-200 rounded-xl text-ml"
               placeholder="(010제외)휴대폰번호 8자리"
               value={guestPhone}
               onChange={e => setGuestPhone(e.target.value)}
@@ -239,23 +321,50 @@ export default function AttendanceForm() {
           </>
         ) : (
           <>
-            <select
-              className="w-full p-3 h-[56px] border border-gray-300 rounded-xl text-xl"
-              value={selectedMember?.id || ''}
-              onChange={e => {
-                const member = members.find(m => m.id === e.target.value);
-                setSelectedMember(member || null);
-              }}
-            >
-              <option value="">회원이름 선택</option>
-              {members.map(member => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
+            {/* 회원 자동완성 입력 필드 */}
+            <div className="relative w-full">
+              <input
+                className="w-full p-3 h-[56px] border border-gray-200 rounded-xl text-xl"
+                placeholder="회원 이름을 입력하세요"
+                value={memberInput}
+                onChange={e => handleMemberInputChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  if (filteredMembers.length > 0) {
+                    setShowMemberList(true);
+                  }
+                }}
+                onBlur={() => {
+                  // 잠시 지연 후 목록 숨김 (클릭 이벤트가 먼저 처리되도록)
+                  setTimeout(() => setShowMemberList(false), 200);
+                }}
+                autoComplete="off"
+              />
+              
+              {/* 자동완성 드롭다운 목록 */}
+              {showMemberList && filteredMembers.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredMembers.map((member, index) => (
+                    <div
+                      key={member.id}
+                      className={`p-3 cursor-pointer hover:bg-gray-50 flex justify-between items-center ${
+                        index === selectedIndex ? 'bg-blue-100' : ''
+                      }`}
+                      onClick={() => handleMemberSelect(member)}
+                    >
+                      <span className="font-medium">{member.name}</span>
+                      {member.phone_last4 && (
+                        <span className="text-sm text-gray-400">{member.phone_last4}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* 선택된 회원의 전화번호 표시 */}
             {selectedMember?.phone_last4 && (
-              <span className="text-2xl font-bold text-gray-400 whitespace-nowrap ml-12">
+              <span className="text-2xl font-bold text-gray-300 whitespace-nowrap ml-12">
                 {selectedMember.phone_last4}
               </span>
             )}

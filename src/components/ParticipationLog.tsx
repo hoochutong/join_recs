@@ -5,6 +5,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { supabase } from '../lib/supabase';
 import isBetween from 'dayjs/plugin/isBetween';
+import { DocumentTextIcon } from '@heroicons/react/24/solid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -205,7 +206,10 @@ export default function ParticipationLog() {
 
   return (
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6 print:p-0 print:bg-white participation-log-section">
-      <h2 className="text-left text-2xl font-semibold mb-2 text-gray-800">참여 기록</h2>
+      <div className="flex items-center space-x-2 mb-2">
+        <DocumentTextIcon className="h-7 w-7 text-gray-800" />
+        <h2 className="text-left text-2xl font-bold text-gray-800">참여기록 출력</h2>
+      </div>
       <hr className="mb-4 border-t" />
       <div className="mb-4 flex items-center space-x-2">
         <div className="relative">
@@ -259,7 +263,7 @@ export default function ParticipationLog() {
                   {displayData.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="text-center py-4 bg-white text-[1.3em] border-t border-b border-gray-300 leading-[1.4em]">
-                        참여 기록이 없습니다.
+                        기록이 없습니다.
                       </td>
                     </tr>
                   ) : (
@@ -298,7 +302,7 @@ export default function ParticipationLog() {
                 {displayData.length === 0 ? (
                   <tr>
                     <td colSpan={isAdmin ? 5 : 4} className="text-center py-4">
-                      참여 기록이 없습니다.
+                      참여 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
