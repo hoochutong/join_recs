@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { PencilSquareIcon, UsersIcon } from '@heroicons/react/24/solid';
+import { PencilSquareIcon, UsersIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid';
 
 // Member 타입: 회원 정보를 나타냅니다.
 interface Member {
@@ -135,13 +135,14 @@ export default function MemberAdmin() {
       {/* 관리자 로그인 상태에 따른 조건부 렌더링 */}
       {isAdmin ? (
         <>
-          {/* 로그아웃 버튼 - 테스트용 */}
+          {/* 로그아웃 아이콘 - 작고 눈에 안띄게 */}
           <div className="flex justify-end mb-2">
             <button
               onClick={handleAdminLogout}
-              className="text-sm text-red-500 hover:text-red-700 underline"
+              title="로그아웃"
+              className="text-gray-300 hover:text-red-500 transition-colors"
             >
-              로그아웃 (테스트용)
+              <ArrowRightOnRectangleIcon className="h-4 w-4" />
             </button>
           </div>
           
