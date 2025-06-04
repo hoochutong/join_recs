@@ -72,9 +72,19 @@ export default function MemberAdmin() {
     if (password === 'pikachu1029') {
       localStorage.setItem('isAdmin', 'true');
       localStorage.setItem('adminPassword', password);
-      fetchMembers();
+      // 페이지 새로고침으로 모든 컴포넌트가 로그인 상태를 인식하도록 함
+      window.location.reload();
     } else {
       alert('비밀번호가 틀렸습니다.');
+    }
+  };
+
+  // 관리자 로그아웃 함수 (테스트용)
+  const handleAdminLogout = () => {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      localStorage.removeItem('isAdmin');
+      localStorage.removeItem('adminPassword');
+      window.location.reload(); // 페이지 새로고침
     }
   };
 
@@ -122,42 +132,53 @@ export default function MemberAdmin() {
       </div>
       <hr className="mt-1 mb-4 border-t" />
 
-      {/* 회원 추가 입력 폼 */}
-      <div className="space-y-2 mb-10">
-        <input
-          className="w-full p-2 border rounded"
-          placeholder="이름"
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-        />
-        <input
-          className="w-full p-2 border rounded"
-          type="tel"
-          inputMode="numeric"
-          placeholder="휴대폰번호 8자리"
-          value={newPhone}
-          onChange={e => setNewPhone(e.target.value)}
-        />
-        <select
-          className="w-full p-2 border rounded"
-          value={newStatus}
-          onChange={e => setNewStatus(e.target.value)}
-        >
-          {statusOptions.map(status => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
-        <button
-          className="w-full bg-black text-white font-bold text-lg p-2 rounded-full hover:bg-gray-800"
-          onClick={handleAdd}
-        >
-          회원 추가하기
-        </button>
-      </div>
-
-      {/* 회원 목록 테이블 (관리자만 볼 수 있음) */}
+      {/* 관리자 로그인 상태에 따른 조건부 렌더링 */}
       {isAdmin ? (
         <>
+          {/* 로그아웃 버튼 - 테스트용 */}
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={handleAdminLogout}
+              className="text-sm text-red-500 hover:text-red-700 underline"
+            >
+              로그아웃 (테스트용)
+            </button>
+          </div>
+          
+          {/* 회원 추가 입력 폼 - 관리자만 접근 가능 */}
+          <div className="space-y-2 mb-10">
+            <input
+              className="w-full p-2 border rounded"
+              placeholder="이름"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+            />
+            <input
+              className="w-full p-2 border rounded"
+              type="tel"
+              inputMode="numeric"
+              placeholder="휴대폰번호 8자리"
+              value={newPhone}
+              onChange={e => setNewPhone(e.target.value)}
+            />
+            <select
+              className="w-full p-2 border rounded"
+              value={newStatus}
+              onChange={e => setNewStatus(e.target.value)}
+            >
+              {statusOptions.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+            <button
+              className="w-full bg-black text-white font-bold text-lg p-2 rounded-full hover:bg-gray-800"
+              onClick={handleAdd}
+            >
+              회원 추가하기
+            </button>
+          </div>
+
+          {/* 회원 목록 테이블 - 관리자만 접근 가능 */}
           <table className="w-full text-left border">
             <thead>
               <tr className="bg-gray-100">
@@ -189,8 +210,8 @@ export default function MemberAdmin() {
               ))}
             </tbody>
           </table>
-          
-          {/* 페이지네이션 UI */}
+            
+          {/* 페이지네이션 UI - 관리자만 접근 가능 */}
           {totalMembers > membersPerPage && (
             <div className="flex justify-center items-center mt-4 space-x-2">
               <button
@@ -233,9 +254,10 @@ export default function MemberAdmin() {
           )}
         </>
       ) : (
+        /* 관리자 로그인이 필요한 경우 */
         <div className="py-4 text-center border rounded">
           <div className="text-gray-400 mb-4">
-            회원 목록을 보려면 관리자 로그인이 필요합니다.
+          회원 관리 기능을 사용하려면 관리자 로그인이 필요합니다.
           </div>
           <button
             onClick={handleAdminLogin}

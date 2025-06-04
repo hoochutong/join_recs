@@ -143,14 +143,6 @@ export default function AttendanceForm() {
         return;
       }
 
-      // 게스트 단독 insert payload 로그 추가
-      console.log('게스트 단독 insert payload:', {
-        guest_name: guestName,
-        guest_phone: guestPhone,
-        user_agent: navigator.userAgent,
-        record_time: nowKST?.format?.() || dayjs().tz('Asia/Seoul').format(),
-      });
-
       const { error: guestInsertError } = await supabase
         .from('attendance_guests')
         .insert({
@@ -159,8 +151,6 @@ export default function AttendanceForm() {
           user_agent: navigator.userAgent,
           record_time: nowKST?.format?.() || dayjs().tz('Asia/Seoul').format(),
         });
-
-      console.log('게스트 단독 참여기록 응답:', guestInsertError ? guestInsertError : '성공');
 
       if (guestInsertError) {
         alert('게스트 참여 기록에 실패했습니다.');
@@ -234,18 +224,13 @@ export default function AttendanceForm() {
         }
 
         if (guestInsertPayload.length > 0) {
-          console.log('게스트 insert payload:', guestInsertPayload);
-
           const { data: guestInsertResult, error: guestInsertError } = await supabase
             .from('attendance_guests')
             .insert(guestInsertPayload)
             .select();
 
           if (guestInsertError) {
-            console.error('게스트 insert 에러:', guestInsertError);
             alert('게스트 정보 저장에 실패했습니다.');
-          } else {
-            console.log('게스트 저장 완료:', guestInsertResult);
           }
         }
       }
@@ -254,7 +239,6 @@ export default function AttendanceForm() {
     }
 
     setTimeout(() => {
-      console.log('폼 초기화 실행');
       setSelectedMember(null);
       setMemberInput(''); // 회원 입력 필드도 초기화
       setFilteredMembers([]); // 필터링된 목록도 초기화
@@ -274,34 +258,13 @@ export default function AttendanceForm() {
 
   return (
     <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg attendance-form-section">
-      {/* 게스트 체크박스 */}
-      <div className="flex justify-end mb-4">
-        <label
-          onClick={() => {
-            setIsGuestMode(!isGuestMode);
-            setSelectedMember(null);
-            setMemberInput(''); // 회원 입력 필드 초기화
-            setFilteredMembers([]); // 필터링된 목록 초기화
-            setShowMemberList(false); // 회원 목록 숨김
-            setSelectedIndex(-1); // 선택 인덱스 초기화
-            setGuestName('');
-            setGuestPhone('');
-          }}
-          className={`px-3 py-1.5 rounded-full flex items-center space-x-2 cursor-pointer font-bold text-white ${
-            isGuestMode ? 'bg-black' : 'bg-[#9a9a9a]'
-          }`}
-        >
-          <span>✓ 회원이 아닙니다</span>
-        </label>
-      </div>
-
       {/* 회원 자동완성 입력 필드 또는 게스트 이름 입력 필드 */}
       <div className="mb-4 flex items-center space-x-2 relative">
         {isGuestMode ? (
           <>
             <input
               className="w-full p-3 h-[56px] border border-gray-300 rounded-xl text-xl"
-              placeholder="이름을 정확히 입력하세요"
+              placeholder="본명을 입력하세요"
               value={guestName}
               onChange={e => setGuestName(e.target.value)}
               required
@@ -325,7 +288,7 @@ export default function AttendanceForm() {
             <div className="relative w-full">
               <input
                 className="w-full p-3 h-[56px] border border-gray-200 rounded-xl text-xl"
-                placeholder="회원 이름을 입력하세요"
+                placeholder="'성'을 입력하고, 내 이름을 선택하세요"
                 value={memberInput}
                 onChange={e => handleMemberInputChange(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -372,13 +335,40 @@ export default function AttendanceForm() {
         )}
       </div>
 
-      {/* 게스트 동반 체크박스 */}
-      {!isGuestMode && (
-        <label className="flex items-center space-x-2 mb-2">
-          <input type="checkbox" checked={hasGuest} onChange={e => setHasGuest(e.target.checked)} />
-          <span>게스트 동반해요</span>
+      {/* 게스트 동반 체크박스와 회원이 아닙니다 버튼을 같은 라인에 배치 */}
+      <div className="flex items-center justify-between mb-2">
+        {/* 게스트 동반 체크박스는 회원 모드일 때만 표시 */}
+        {!isGuestMode && (
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" checked={hasGuest} onChange={e => setHasGuest(e.target.checked)} />
+            <span>게스트와 함께 해요</span>
+          </label>
+        )}
+        
+        {/* 게스트 모드일 때는 빈 공간을 위해 div 추가 */}
+        {isGuestMode && <div></div>}
+        
+        {/* 회원이 아닙니다/회원입니다 버튼을 항상 표시 */}
+        <label
+          onClick={() => {
+            setIsGuestMode(!isGuestMode);
+            setSelectedMember(null);
+            setMemberInput(''); // 회원 입력 필드 초기화
+            setFilteredMembers([]); // 필터링된 목록 초기화
+            setShowMemberList(false); // 회원 목록 숨김
+            setSelectedIndex(-1); // 선택 인덱스 초기화
+            setGuestName('');
+            setGuestPhone('');
+            // 게스트 모드에서 회원 모드로 전환시 게스트 동반 해제
+            setHasGuest(false);
+          }}
+          className={`w-32 px-2 py-1 rounded-full flex items-center justify-center space-x-1 cursor-pointer text-sm font-medium text-white ${
+            isGuestMode ? 'bg-black' : 'bg-[#9a9a9a]'
+          }`}
+        >
+          <span>{isGuestMode ? '✓ 회원입니다' : '✓ 회원이 아닙니다'}</span>
         </label>
-      )}
+      </div>
 
       {/* 게스트 정보 입력 */}
       {hasGuest && (

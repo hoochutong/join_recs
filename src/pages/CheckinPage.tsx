@@ -10,12 +10,12 @@ export default function CheckinPage() {
     <div className="min-h-screen bg-white px-4 py-6">
       {/* 상단 타이틀과 관리자 페이지 이동 아이콘 */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2 ml-5">
+        <div className="flex items-center space-x-2 ml-4">
           <TagIcon className="h-7 w-7 text-gray-800" />
-          <h2 className="text-[1.5rem] font-bold">피클볼클럽 참여 체크</h2>
+          <h2 className="text-[1.4rem] font-bold">피클볼클럽 참여 체크</h2>
         </div>
         {/* 관리자 페이지로 이동하는 링크 */}
-        <a href="/admin" title="관리자 페이지" className="text-gray-300 hover:text-gray-500">
+        <a href="/admin" title="관리자 페이지" className="text-gray-300 hover:text-gray-500 mr-4">
           <Cog6ToothIcon className="h-7 w-7" />
         </a>
       </div>

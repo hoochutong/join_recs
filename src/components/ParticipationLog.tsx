@@ -37,8 +37,6 @@ export default function ParticipationLog() {
   const [selectedDate, setSelectedDate] = useState<string>(dayjs().tz('Asia/Seoul').format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [authChecked, setAuthChecked] = useState(false);
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [exporting, setExporting] = useState(false);
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
@@ -60,14 +58,8 @@ export default function ParticipationLog() {
   };
 
   useEffect(() => {
-    const isStoredAdmin = localStorage.getItem('isAdmin') === 'true';
-    if (!isStoredAdmin) {
-      setShowPasswordPrompt(true);
-    }
-    setAuthChecked(true);
-  }, []);
+    if (!isAdmin) return;
 
-  useEffect(() => {
     const fetchRecords = async () => {
       setLoading(true);
       setError('');
@@ -96,15 +88,31 @@ export default function ParticipationLog() {
         let rt: string | undefined = undefined;
         if (g.record_time) {
           rt = g.record_time;
-        } else if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0].record_time) {
+        } else if (Array.isArray(g.attendances) && g.attendances.length > 0 && g.attendances[0]?.record_time) {
           rt = g.attendances[0].record_time;
-        } else if (g.attendances && g.attendances.record_time) {
-          rt = g.attendances.record_time;
+        } else if (g.attendances && typeof g.attendances === 'object' && 'record_time' in g.attendances) {
+          rt = (g.attendances as { record_time: string }).record_time;
         }
         return rt && dayjs(rt).isBetween(start, end, null, '[]');
       }).sort((a, b) => {
-        let aTime: string | undefined = a.record_time || (Array.isArray(a.attendances) ? a.attendances[0]?.record_time : a.attendances?.record_time);
-        let bTime: string | undefined = b.record_time || (Array.isArray(b.attendances) ? b.attendances[0]?.record_time : b.attendances?.record_time);
+        let aTime: string | undefined = a.record_time;
+        if (!aTime) {
+          if (Array.isArray(a.attendances) && a.attendances.length > 0 && a.attendances[0]?.record_time) {
+            aTime = a.attendances[0].record_time;
+          } else if (a.attendances && typeof a.attendances === 'object' && 'record_time' in a.attendances) {
+            aTime = (a.attendances as { record_time: string }).record_time;
+          }
+        }
+        
+        let bTime: string | undefined = b.record_time;
+        if (!bTime) {
+          if (Array.isArray(b.attendances) && b.attendances.length > 0 && b.attendances[0]?.record_time) {
+            bTime = b.attendances[0].record_time;
+          } else if (b.attendances && typeof b.attendances === 'object' && 'record_time' in b.attendances) {
+            bTime = (b.attendances as { record_time: string }).record_time;
+          }
+        }
+        
         return dayjs(aTime).diff(dayjs(bTime));
       });
 
@@ -138,7 +146,7 @@ export default function ParticipationLog() {
     };
 
     fetchRecords();
-  }, [selectedDate]);
+  }, [selectedDate, isAdmin]);
 
   const handleDelete = async (rec: typeof displayData[number]) => {
     const confirmDelete = confirm(`${rec.name}님의 기록을 삭제할까요?`);
@@ -157,32 +165,20 @@ export default function ParticipationLog() {
     setGuests(prev => prev.filter(g => g.id !== rec.id));
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const password = (e.currentTarget.elements.namedItem('adminPassword') as HTMLInputElement).value;
-    if (password === 'pikachu1029') {
-      localStorage.setItem('isAdmin', 'true');
-      setShowPasswordPrompt(false);
-    } else {
-      alert('비밀번호가 틀렸습니다.');
-    }
-  };
-
-  if (!authChecked || showPasswordPrompt) {
+  if (!isAdmin) {
     return (
-      <div className="max-w-md mx-auto mt-20 p-4 border rounded shadow">
-        <h2 className="text-lg font-semibold mb-4">관리자 비밀번호 입력</h2>
-        <form onSubmit={handlePasswordSubmit}>
-          <input
-            type="password"
-            name="adminPassword"
-            placeholder="비밀번호 입력"
-            className="border p-2 w-full mb-3"
-          />
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-full">
-            확인
-          </button>
-        </form>
+      <div className="max-w-screen-sm w-full mx-auto px-4 py-6">
+        <div className="flex items-center space-x-2 mb-2">
+          <DocumentTextIcon className="h-7 w-7 text-gray-800" />
+          <h2 className="text-left text-2xl font-bold text-gray-800">참여기록 출력</h2>
+        </div>
+        <hr className="mb-4 border-t" />
+        <div className="py-4 text-center border rounded">
+          <div className="text-gray-400 mb-4">
+            참여기록 조회 및 PDF 출력 기능을 사용하려면<br />
+            위에서 관리자 로그인을 먼저 진행해주세요.
+          </div>
+        </div>
       </div>
     );
   }
