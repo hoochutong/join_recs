@@ -1,0 +1,37 @@
+name: Database Keepalive
+
+# 워크플로우 실행 조건
+on:
+  schedule:
+    # 매 시간 정각 + 5분에 실행 (Vercel Cron과 시간 간격 다르게)
+    - cron: '5 * * * *'
+  
+  # 수동 실행도 가능
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Vercel API to keep DB alive
+        run: |
+          # Vercel 배포 URL 확인
+          VERCEL_URL="${{ secrets.VERCEL_URL }}"
+          
+          if [ -z "$VERCEL_URL" ]; then
+            echo "⚠️ VERCEL_URL secret이 설정되지 않았습니다."
+            echo "📝 GitHub Settings → Secrets → Actions에서 VERCEL_URL을 추가해주세요."
+            exit 1
+          fi
+          
+          echo "🔄 Keepalive ping 실행 중..."
+          curl -X GET "https://$VERCEL_URL/api/keepalive" \
+            -H "Content-Type: application/json" \
+            -w "\nStatus: %{http_code}\n" \
+            --max-time 10 \
+            --fail-with-body
+          
+          echo "✅ Keepalive 성공!"
+        env:
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
