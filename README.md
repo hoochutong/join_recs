@@ -76,6 +76,55 @@ curl https://[your-vercel-url]/api/keepalive
 - **Vercel Dashboard**: Deployments → Functions → `/api/keepalive`
 - **GitHub Actions**: Actions 탭에서 워크플로우 실행 로그 확인
 
+## 🔍 모니터링 및 점검 가이드
+
+### 매주 점검 (약 5분)
+
+1. **Vercel Keepalive 확인**
+   - https://vercel.com → 프로젝트 선택 → Deployments
+   - Functions 탭에서 `/api/keepalive` 실행 로그 확인
+   - 10분마다 실행되어야 함
+
+2. **GitHub Actions 확인**
+   - https://github.com/hoochutong/join_recs/actions
+   - "Database Keepalive" 워크플로우 클릭
+   - 최근 실행 로그 확인 (매 시간마다 실행되어야 함)
+
+### 매월 점검 (약 10분)
+
+1. **Supabase 프로젝트 상태**
+   - https://supabase.com/dashboard → 프로젝트 선택
+   - Settings → General
+   - Project 상태가 **Active** 인지 확인
+   - Idle 상태면 Restore 클릭
+
+2. **Vercel 환경 변수 확인**
+   - https://vercel.com → 프로젝트 선택 → Settings → Environment Variables
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` 존재 확인
+
+### 3개월마다 점검 (약 10분)
+
+1. **GitHub Personal Access Token 만료 확인**
+   - https://github.com/settings/tokens
+   - 토큰 목록에서 만료일 확인
+   - 만료 예정 시 새 토큰 생성
+
+2. **GitHub Secrets 확인**
+   - https://github.com/hoochutong/join_recs/settings/secrets/actions
+   - `VERCEL_URL` 존재 확인
+
+3. **Keepalive 수동 테스트**
+   ```bash
+   curl https://[your-vercel-url]/api/keepalive
+   ```
+   정상 응답: `{"success":true,"message":"Database keepalive successful"...}`
+
+### 문제 발생 시
+
+- **Supabase가 휴지 상태**: Dashboard → Settings → Restore
+- **Keepalive 동작 안 함**: 환경 변수 재확인, Vercel 재배포
+- **GitHub Actions 실패**: Secrets 재설정
+
 ## 📁 프로젝트 구조
 
 ```
