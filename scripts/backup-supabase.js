@@ -241,9 +241,9 @@ function cleanupOldBackups() {
     }))
     .sort((a, b) => b.mtime - a.mtime);
 
-  // 최근 6개월(180일) 이전 파일 삭제
+  // 최근 2개월(60일) 이전 파일 삭제
   const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - 180);
+  cutoffDate.setDate(cutoffDate.getDate() - 60);
   
   let deletedCount = 0;
   for (const file of files) {

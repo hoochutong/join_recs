@@ -16,7 +16,7 @@ on:
 
 env:
   NODE_VERSION: '18'
-  BACKUP_RETENTION_DAYS: 180  # 6개월간 보관
+  BACKUP_RETENTION_DAYS: 60  # 2개월간 보관
 
 jobs:
   backup:
