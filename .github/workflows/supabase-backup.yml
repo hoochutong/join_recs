@@ -1,0 +1,133 @@
+name: Supabase Monthly Backup
+
+on:
+  # 매월 1일 오전 2시 (UTC) 실행
+  schedule:
+    - cron: '0 2 1 * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: '테스트 모드 (실제 백업 없이 로그만 출력)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  BACKUP_RETENTION_DAYS: 180  # 6개월간 보관
+
+jobs:
+  backup:
+    name: Supabase Database Backup
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install @supabase/supabase-js
+          
+      - name: Create backup directory
+        run: mkdir -p backups
+        
+      - name: Run Supabase backup
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: |
+          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+            echo "🧪 테스트 모드: 실제 백업을 수행하지 않습니다."
+            echo "환경 변수 확인:"
+            echo "SUPABASE_URL: ${SUPABASE_URL:+설정됨}"
+            echo "SUPABASE_ACCESS_TOKEN: ${SUPABASE_ACCESS_TOKEN:+설정됨}"
+            echo "SUPABASE_PROJECT_ID: ${SUPABASE_PROJECT_ID:+설정됨}"
+            exit 0
+          fi
+          
+          node scripts/backup-supabase.js
+          
+      - name: Upload backup artifacts
+        if: github.event.inputs.test_mode != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_number }}
+          path: backups/
+          retention-days: ${{ env.BACKUP_RETENTION_DAYS }}
+          
+      - name: Create GitHub Release (for monthly backups)
+        if: github.event_name == 'schedule' && github.event.inputs.test_mode != 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: backup-${{ github.run_number }}
+          name: Monthly Supabase Backup - ${{ github.run_number }}
+          body: |
+            ## 📦 수파베이스 월간 백업
+            
+            **백업 일시:** ${{ github.run_number }}
+            **워크플로우 실행:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            ### 📋 백업 내용
+            - 데이터베이스 스키마 (DDL)
+            - 모든 테이블 데이터 (INSERT 문)
+            - 압축된 백업 파일
+            
+            ### 🔧 복원 방법
+            ```bash
+            # 백업 파일 다운로드 후
+            unzip supabase-backup-*.zip
+            # 스키마 복원
+            psql -f schema-*.sql
+            # 데이터 복원  
+            psql -f data-*.sql
+            ```
+            
+            ### ⚠️ 주의사항
+            - 이 백업은 프로덕션 환경 복원용입니다
+            - 복원 전 반드시 현재 데이터를 백업하세요
+            - 테스트 환경에서 먼저 검증하세요
+          files: backups/*
+          draft: false
+          prerelease: false
+          
+      - name: Send notification (on failure)
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#alerts'
+          text: |
+            🚨 수파베이스 백업 실패
+            
+            **프로젝트:** ${{ github.repository }}
+            **워크플로우:** ${{ github.workflow }}
+            **실행 ID:** ${{ github.run_id }}
+            **로그:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+      - name: Send success notification
+        if: success() && github.event_name == 'schedule'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#backups'
+          text: |
+            ✅ 수파베이스 월간 백업 완료
+            
+            **프로젝트:** ${{ github.repository }}
+            **백업 태그:** backup-${{ github.run_number }}
+            **릴리스:** ${{ github.server_url }}/${{ github.repository }}/releases/tag/backup-${{ github.run_number }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
