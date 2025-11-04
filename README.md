@@ -15,7 +15,11 @@
 - 회원 자동완성 검색
 - 게스트 동반 기능 (최대 2명)
 - 단독 게스트 참여 기능
-- 하루 1회 중복 참여 방지
+- **하루 1회 중복 참여 방지**
+  - 회원/게스트별 동일일 중복 기록 차단
+  - KST(한국시간) 기준으로 오늘 범위 계산
+  - 이름 + 전화번호 조합으로 게스트 중복 체크
+  - 안전한 에러 처리 및 로깅 포함
 
 ### 2. 회원 관리 (Admin)
 - 회원 추가/수정/삭제
@@ -36,20 +40,22 @@ Supabase 무료 플랜의 DB 휴지 상태를 방지하기 위한 자동화 시�
 
 1. **Vercel Cron Jobs**
    - 경로: `/api/keepalive`
-   - 주기: 10분마다 실행
-   - 역할: 주기적으로 DB에 간단한 쿼리 실행
+   - 주기: 매일 새벽 2시 (한국 시간 기준)
+   - 역할: 주기적으로 DB에 간단한 쿼리 실행하여 휴지 상태 방지
 
 2. **GitHub Actions**
    - 경로: `.github/workflows/keepalive.yml`
-   - 주기: 매 시간 정각 + 5분
+   - 주기: 매일 새벽 3시 (한국 시간 기준)
    - 역할: Vercel keepalive API 호출 (백업)
 
 ### 환경 변수 설정
 
 #### Vercel 배포 시
 환경변수가 이미 설정되어 있어야 합니다:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_URL` (또는 `SUPABASE_URL`)
+- `VITE_SUPABASE_ANON_KEY` (또는 `SUPABASE_ANON_KEY`)
+
+**참고:** Vercel Serverless Functions에서는 `VITE_` 접두사가 있는 환경 변수도 접근 가능하지만, 더 안전하게는 일반 이름(`SUPABASE_URL`, `SUPABASE_ANON_KEY`)으로도 설정 가능합니다.
 
 #### GitHub Actions 사용 시
 GitHub Secrets에 추가 필요:
@@ -83,12 +89,12 @@ curl https://[your-vercel-url]/api/keepalive
 1. **Vercel Keepalive 확인**
    - https://vercel.com → 프로젝트 선택 → Deployments
    - Functions 탭에서 `/api/keepalive` 실행 로그 확인
-   - 10분마다 실행되어야 함
+   - 매일 새벽 2시에 실행되어야 함
 
 2. **GitHub Actions 확인**
    - https://github.com/hoochutong/join_recs/actions
    - "Database Keepalive" 워크플로우 클릭
-   - 최근 실행 로그 확인 (매 시간마다 실행되어야 함)
+   - 최근 실행 로그 확인 (매일 새벽 3시에 실행되어야 함)
 
 ### 매월 점검 (약 10분)
 
@@ -124,6 +130,53 @@ curl https://[your-vercel-url]/api/keepalive
 - **Supabase가 휴지 상태**: Dashboard → Settings → Restore
 - **Keepalive 동작 안 함**: 환경 변수 재확인, Vercel 재배포
 - **GitHub Actions 실패**: Secrets 재설정
+- **Vercel Cron 실행 안 됨**: Hobby 플랜 제한 확인 (하루 1회만 허용), Pro 플랜 업그레이드 고려
+
+## 🔧 트러블슈팅 및 문제 해결 이력
+
+### 2025-10-29: 중복기록 방지 시간대 처리 문제 해결
+
+**문제**: 
+- 중복 참여 방지 기능이 작동하지 않음
+- 당일 동일인 중복 기록이 가능한 상태
+
+**원인 분석**:
+- 시간대 변환 오류: `nowKST.startOf('day').utc().format()` 방식 사용 시 UTC 변환으로 인해 하루가 어긋남
+- 예시: KST 오후 3시 → UTC 오전 6시로 변환되지만, 검색 범위가 UTC 기준으로 계산되어 범위 밖으로 처리됨
+
+**해결 방법**:
+- KST 기준으로 정확한 오늘 범위 계산: `nowKST.startOf('day').format()` 사용
+- 시간대 변환 없이 KST 타임존 문자열로 직접 비교
+- 디버깅 로그 추가로 문제 진단 가능하도록 개선
+
+**적용 커밋**: 
+- `869634a`, `ec6b9ce`: fix: 중복기록 방지 시간대 처리 문제 해결
+
+### 2025-10-29: Vercel Hobby 플랜 Cron 제한 문제 해결
+
+**문제**:
+- Vercel 배포 실패: `Error: Hobby accounts are limited to daily cron jobs`
+- 기존 설정: `*/10 * * * *` (10분마다 실행) → 하루에 144회 실행
+
+**원인**:
+- Vercel Hobby 플랜 제한: 하루에 1회만 cron 작업 실행 가능
+
+**해결 방법**:
+- Cron 스케줄 변경: `0 0 * * *` (매일 자정 실행)
+- GitHub Actions를 주요 keepalive 메커니즘으로 활용 (매 시간 실행)
+
+**적용 커밋**:
+- `05dfec7`: fix: Vercel Hobby 플랜 호환성을 위해 cron 스케줄을 하루 1회로 변경
+
+### Git 워크플로우 개선
+
+**문제**:
+- 메인 브랜치에서 직접 작업하여 작업 브랜치와 불일치 발생
+
+**해결**:
+- 작업 브랜치(`feature/participation-fix`)에서 모든 기능 개발
+- 메인 브랜치는 병합 전용으로 사용
+- 작업 완료 후 항상 작업 브랜치로 복귀하는 워크플로우 확립
 
 ## 📁 프로젝트 구조
 
