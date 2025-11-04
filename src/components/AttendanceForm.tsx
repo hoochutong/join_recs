@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import isBetween from 'dayjs/plugin/isBetween';
-import { CheckIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -318,11 +318,11 @@ export default function AttendanceForm() {
       {/* 토스트 알림: 성공 메시지 */}
       {showToast && result && (
         <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 
-                        bg-green-500 text-white px-8 py-5 rounded-xl shadow-2xl 
-                        flex items-center space-x-4 animate-slide-down
+                        bg-green-500 text-white px-8 py-6 rounded-xl shadow-2xl 
+                        flex flex-col items-center space-y-3 animate-slide-down
                         min-w-[320px] max-w-[90vw]">
-          <CheckIcon className="h-8 w-8 flex-shrink-0" />
-          <span className="text-xl font-bold whitespace-nowrap">
+          <CheckCircleIcon className="h-10 w-10 flex-shrink-0 border-2 border-white rounded-full" />
+          <span className="text-xl font-bold text-center break-words">
             {result}
           </span>
         </div>
@@ -485,8 +485,6 @@ export default function AttendanceForm() {
         참여하기
       </button>
 
-      {/* 참여 결과 메시지 */}
-      {result && <p className="text-green-600 text-center mt-4 font-semibold">{result}</p>}
     </div>
   );
 }
