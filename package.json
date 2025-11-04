@@ -5,7 +5,11 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "backup": "node scripts/backup-supabase.js",
+        "restore": "node scripts/restore-supabase.js",
+        "backup:test": "node scripts/backup-supabase.js --dry-run",
+        "restore:test": "node scripts/restore-supabase.js --dry-run"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",

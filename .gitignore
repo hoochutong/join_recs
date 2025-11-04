@@ -28,3 +28,9 @@ coverage
 
 # vercel CLI
 .vercel
+
+# backup files
+backups/
+restore-temp/
+*.zip
+*.sql

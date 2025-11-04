@@ -119,8 +119,14 @@ export default function AttendanceForm() {
 
   const handleSubmit = async () => {
     const nowKST = dayjs().tz('Asia/Seoul');
-    const todayStart = nowKST.startOf('day').utc().format();
-    const todayEnd = nowKST.endOf('day').utc().format();
+    // 수정: KST 기준으로 오늘 범위를 계산하고 UTC로 변환
+    const todayStart = nowKST.startOf('day').format();
+    const todayEnd = nowKST.endOf('day').format();
+    
+    // 디버깅: 시간대 정보 출력
+    console.log('현재 KST 시간:', nowKST.format());
+    console.log('오늘 시작 (KST):', todayStart);
+    console.log('오늘 끝 (KST):', todayEnd);
 
     if (isGuestMode) {
       if (!guestName) return alert('이름을 입력해주세요.');
@@ -137,6 +143,12 @@ export default function AttendanceForm() {
         .gte('record_time', todayStart)
         .lte('record_time', todayEnd)
         .maybeSingle();
+
+      if (existingGuest.error) {
+        console.error('게스트 중복 체크 중 오류:', existingGuest.error);
+        alert('시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
 
       if (existingGuest.data) {
         alert('오늘은 이미 참여를 완료하셨습니다.');
@@ -163,21 +175,66 @@ export default function AttendanceForm() {
       const memberId = selectedMember.id;
 
       // 기존 출석 여부 확인 및 기록
+      console.log('회원 중복 체크 시작 - memberId:', memberId);
       const existing = await supabase
         .from('attendances')
         .select('id, record_time')
         .gte('record_time', todayStart)
         .lte('record_time', todayEnd)
-        .eq('member_id', memberId)
-        .order('record_time', { ascending: false })
-        .limit(1)
-        .single();
+        .eq('member_id', memberId);
 
-      if (existing.data?.record_time) {
-        const recordTime = dayjs(existing.data.record_time);
-        if (recordTime.isBetween(dayjs(todayStart), dayjs(todayEnd), null, '[]')) {
-          alert('오늘은 이미 참여를 완료하셨습니다.');
+      console.log('중복 체크 결과:', existing);
+
+      if (existing.error) {
+        console.error('중복 체크 중 오류:', existing.error);
+        alert('시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      if (existing.data && existing.data.length > 0) {
+        console.log('중복 발견! 기존 기록:', existing.data);
+        alert('오늘은 이미 참여를 완료하셨습니다.');
+        return;
+      }
+      
+      console.log('중복 없음, 참여 기록 진행');
+
+      // 게스트 동반 시 게스트 중복 체크 먼저 수행
+      if (hasGuest) {
+        if ((guest1Name && !guest1Phone) || (guest2Name && !guest2Phone)) {
+          alert('게스트의 휴대폰번호를 입력해주세요.');
           return;
+        }
+
+        const guestsToCheck: { name: string; phone: string; label: string; }[] = [];
+        if (guest1Name && guest1Phone) {
+          guestsToCheck.push({ name: guest1Name, phone: guest1Phone, label: '게스트1' });
+        }
+        if (guest2Name && guest2Phone) {
+          guestsToCheck.push({ name: guest2Name, phone: guest2Phone, label: '게스트2' });
+        }
+
+        // 각 게스트의 중복 체크
+        for (const guest of guestsToCheck) {
+          const existingGuest = await supabase
+            .from('attendance_guests')
+            .select('id')
+            .eq('guest_name', guest.name)
+            .eq('guest_phone', guest.phone)
+            .gte('record_time', todayStart)
+            .lte('record_time', todayEnd)
+            .maybeSingle();
+
+          if (existingGuest.error) {
+            console.error('게스트 중복 체크 중 오류:', existingGuest.error);
+            alert('시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            return;
+          }
+
+          if (existingGuest.data) {
+            alert(`${guest.label}(${guest.name})님은 오늘 이미 참여를 완료하셨습니다.`);
+            return;
+          }
         }
       }
 
@@ -198,11 +255,6 @@ export default function AttendanceForm() {
 
       // 게스트 동반 정보 저장 (attendance_guests 테이블)
       if (hasGuest && attendance?.id) {
-        if ((guest1Name && !guest1Phone) || (guest2Name && !guest2Phone)) {
-          alert('게스트의 휴대폰번호를 입력해주세요.');
-          return;
-        }
-
         const guestInsertPayload: any[] = [];
 
         if (guest1Name && guest1Phone) {
