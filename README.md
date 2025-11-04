@@ -36,20 +36,22 @@ Supabase 무료 플랜의 DB 휴지 상태를 방지하기 위한 자동화 시�
 
 1. **Vercel Cron Jobs**
    - 경로: `/api/keepalive`
-   - 주기: 10분마다 실행
-   - 역할: 주기적으로 DB에 간단한 쿼리 실행
+   - 주기: 매일 새벽 2시 (한국 시간 기준)
+   - 역할: 주기적으로 DB에 간단한 쿼리 실행하여 휴지 상태 방지
 
 2. **GitHub Actions**
    - 경로: `.github/workflows/keepalive.yml`
-   - 주기: 매 시간 정각 + 5분
+   - 주기: 매일 새벽 3시 (한국 시간 기준)
    - 역할: Vercel keepalive API 호출 (백업)
 
 ### 환경 변수 설정
 
 #### Vercel 배포 시
 환경변수가 이미 설정되어 있어야 합니다:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_URL` (또는 `SUPABASE_URL`)
+- `VITE_SUPABASE_ANON_KEY` (또는 `SUPABASE_ANON_KEY`)
+
+**참고:** Vercel Serverless Functions에서는 `VITE_` 접두사가 있는 환경 변수도 접근 가능하지만, 더 안전하게는 일반 이름(`SUPABASE_URL`, `SUPABASE_ANON_KEY`)으로도 설정 가능합니다.
 
 #### GitHub Actions 사용 시
 GitHub Secrets에 추가 필요:
@@ -83,12 +85,12 @@ curl https://[your-vercel-url]/api/keepalive
 1. **Vercel Keepalive 확인**
    - https://vercel.com → 프로젝트 선택 → Deployments
    - Functions 탭에서 `/api/keepalive` 실행 로그 확인
-   - 10분마다 실행되어야 함
+   - 매일 새벽 2시에 실행되어야 함
 
 2. **GitHub Actions 확인**
    - https://github.com/hoochutong/join_recs/actions
    - "Database Keepalive" 워크플로우 클릭
-   - 최근 실행 로그 확인 (매 시간마다 실행되어야 함)
+   - 최근 실행 로그 확인 (매일 새벽 3시에 실행되어야 함)
 
 ### 매월 점검 (약 10분)
 
