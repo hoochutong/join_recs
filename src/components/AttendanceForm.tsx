@@ -322,7 +322,7 @@ export default function AttendanceForm() {
                         flex flex-col items-center space-y-3 animate-slide-down
                         min-w-[320px] max-w-[90vw]">
           <CheckCircleIcon className="h-10 w-10 flex-shrink-0 border-2 border-white rounded-full" />
-          <span className="text-xl font-bold text-center break-words">
+          <span className="text-lg font-bold text-center break-words">
             {result}
           </span>
         </div>
