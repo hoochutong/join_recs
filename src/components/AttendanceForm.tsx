@@ -171,7 +171,7 @@ export default function AttendanceForm() {
         return;
       }
 
-      setResult('게스트 참여가 기록되었습니다!');
+      setResult('운동 출석체크를 완료했어요 🤗');
       setShowToast(true); // 토스트 알림 표시
     } else {
       if (!selectedMember) return alert('회원을 선택해주세요');
@@ -290,7 +290,7 @@ export default function AttendanceForm() {
         }
       }
 
-      setResult('참여가 정상적으로 기록되었습니다!');
+      setResult('운동 출석체크를 완료했어요 🤗');
       setShowToast(true); // 토스트 알림 표시
     }
 
