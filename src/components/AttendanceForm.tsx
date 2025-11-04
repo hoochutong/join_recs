@@ -171,7 +171,7 @@ export default function AttendanceForm() {
         return;
       }
 
-      setResult('운동 출석체크를 완료했어요 🤗');
+      setResult('운동 참여 기록를 완료했어요 🤗');
       setShowToast(true); // 토스트 알림 표시
     } else {
       if (!selectedMember) return alert('회원을 선택해주세요');
@@ -322,7 +322,7 @@ export default function AttendanceForm() {
                         flex flex-col items-center space-y-3 animate-slide-down
                         min-w-[320px] max-w-[90vw]">
           <CheckCircleIcon className="h-10 w-10 flex-shrink-0 border-2 border-white rounded-full" />
-          <span className="text-lg font-bold text-center break-words">
+          <span className="text-xl font-bold text-center break-words">
             {result}
           </span>
         </div>
