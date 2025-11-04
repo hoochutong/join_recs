@@ -325,6 +325,8 @@ export default function ParticipationLog() {
               </tbody>
             </table>
           </div>
+          {/* 하단 여유공간: 스크롤 시 상단으로 자동 스크롤되는 문제 방지 */}
+          <div className="h-[150px]"></div>
         </>
       )}
     </div>
