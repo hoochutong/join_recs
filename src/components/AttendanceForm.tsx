@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import isBetween from 'dayjs/plugin/isBetween';
+import { CheckIcon } from '@heroicons/react/24/solid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -31,6 +32,7 @@ export default function AttendanceForm() {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState(''); // 전화번호 필수 입력
+  const [showToast, setShowToast] = useState(false); // 토스트 알림 표시 여부
 
   useEffect(() => {
     // 정회원, 준회원만 가져옴 (임시로 기존 방식 사용)
@@ -170,6 +172,7 @@ export default function AttendanceForm() {
       }
 
       setResult('게스트 참여가 기록되었습니다!');
+      setShowToast(true); // 토스트 알림 표시
     } else {
       if (!selectedMember) return alert('회원을 선택해주세요');
       const memberId = selectedMember.id;
@@ -288,6 +291,7 @@ export default function AttendanceForm() {
       }
 
       setResult('참여가 정상적으로 기록되었습니다!');
+      setShowToast(true); // 토스트 알림 표시
     }
 
     setTimeout(() => {
@@ -305,11 +309,24 @@ export default function AttendanceForm() {
       setGuestPhone('');
       setIsGuestMode(false);
       setResult('');
+      setShowToast(false); // 토스트 알림 숨김
     }, 3000);
   };
 
   return (
-    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg attendance-form-section">
+    <div className="max-w-screen-sm w-full mx-auto px-4 py-6 text-lg attendance-form-section relative">
+      {/* 토스트 알림: 성공 메시지 */}
+      {showToast && result && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 
+                        bg-green-500 text-white px-8 py-5 rounded-xl shadow-2xl 
+                        flex items-center space-x-4 animate-slide-down
+                        min-w-[320px] max-w-[90vw]">
+          <CheckIcon className="h-8 w-8 flex-shrink-0" />
+          <span className="text-xl font-bold whitespace-nowrap">
+            {result}
+          </span>
+        </div>
+      )}
       {/* 회원 자동완성 입력 필드 또는 게스트 이름 입력 필드 */}
       <div className="mb-4 flex items-center space-x-2 relative">
         {isGuestMode ? (
